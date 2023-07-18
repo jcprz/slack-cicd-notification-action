@@ -1,0 +1,110 @@
+name: 'Slack Notification Action'
+description: 'Send a notification to Slack'
+inputs:
+  slack-webhook-url:
+    description: 'Slack Webhook URL'
+    required: true
+  github-job:
+    description: 'GitHub Job'
+    required: true
+  github-actor:
+    description: 'GitHub Actor'
+    required: true
+  git-sha:
+    description: 'Git Commit SHA'
+    required: true
+  repository-name:
+    description: 'Repository Name'
+    required: true
+  environment:
+    description: 'Environment'
+    required: true
+  status:
+    description: 'Status (started, success, failure)'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Notify Slack
+      run: |
+        TIMESTAMP=$(date +%FT%T%Z)
+
+        if [ "${{ inputs.status }}" == "STARTED" ]; then
+          COLOR="#ffc500" # yellow
+          STATUS_TEXT=":arrow_forward: Started"
+        elif [ "${{ inputs.status }}" == "SUCCESS" ]; then
+          COLOR="#09db09" # green
+          STATUS_TEXT=":white_check_mark: Success"
+        elif [ "${{ inputs.status }}" == "FAILED" ]; then
+          COLOR="#ff0006" # red
+          STATUS_TEXT=":x: Failed"
+        elif [ "${{ inputs.status }}" == "CANCELLED" ]; then
+          COLOR="#ff0006" # red
+          STATUS_TEXT=":x: Cancelled"
+        else
+          COLOR="#439FE0" # blue
+          STATUS_TEXT=":information_source: Info"
+        fi
+
+        curl ${{ inputs.slack-webhook-url }} \
+          --request POST \
+          --header 'Content-Type: application/json' --data \
+            '{
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "'"${STATUS_TEXT}"': '${{ inputs.github-job }}' Job"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Triggered by:*\n${{inputs.github-actor}}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Git Commit ID:*\n${{ inputs.git-sha }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Application:*\n${{ inputs.repository-name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:*\n${{ inputs.environment }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Ref:*\n${{ github.ref }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Action URL:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Action>"
+                    }
+                  ],
+                  "accessory": {
+                    "type": "image",
+                    "image_url": "https://avatars.githubusercontent.com/${{inputs.github-actor}}",
+                    "alt_text": "avatar"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": ":clock3: Timestamp: '"${TIMESTAMP}"'"
+                    }
+                  ]
+                }
+              ]
+            }'
+      shell: bash
+
