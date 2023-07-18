@@ -29,16 +29,16 @@ runs:
       run: |
         TIMESTAMP=$(date +%FT%T%Z)
 
-        if [ "${{ inputs.status }}" == "STARTED" ]; then
+        if [ "${{ inputs.status }}" == "started" ]; then
           COLOR="#ffc500" # yellow
           STATUS_TEXT=":arrow_forward: Started"
-        elif [ "${{ inputs.status }}" == "SUCCESS" ]; then
+        elif [ "${{ inputs.status }}" == "success" ]; then
           COLOR="#09db09" # green
           STATUS_TEXT=":white_check_mark: Success"
-        elif [ "${{ inputs.status }}" == "FAILED" ]; then
+        elif [ "${{ inputs.status }}" == "failure" ]; then
           COLOR="#ff0006" # red
           STATUS_TEXT=":x: Failed"
-        elif [ "${{ inputs.status }}" == "CANCELLED" ]; then
+        elif [ "${{ inputs.status }}" == "cancelled" ]; then
           COLOR="#ff0006" # red
           STATUS_TEXT=":x: Cancelled"
         else
